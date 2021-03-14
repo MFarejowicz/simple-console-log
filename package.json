@@ -3,6 +3,7 @@
   "displayName": "simple-console-log",
   "description": "For better console logging",
   "version": "0.0.1",
+  "publisher": "MFarejowicz",
   "engines": {
     "vscode": "^1.54.0"
   },
@@ -10,14 +11,21 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:simple-console-log.helloWorld"
+    "onCommand:simple-console-log.logHere"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "simple-console-log.helloWorld",
-        "title": "Hello World"
+        "command": "simple-console-log.logHere",
+        "title": "Simple Console Log: Log Here"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "simple-console-log.logHere",
+        "key": "ctrl+alt+l",
+        "mac": "ctrl+alt+l"
       }
     ]
   },
