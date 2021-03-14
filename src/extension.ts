@@ -43,23 +43,31 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const document = editor.document;
-    editor.edit((editBuilder) => {
-      const currPosition = editor.selection.active;
-      const currLine = document.lineAt(currPosition);
-      let insertPosition: vscode.Position;
-      let spaces: number;
-      if (currLine.isEmptyOrWhitespace) {
-        // insert in current line
-        insertPosition = currPosition.with({ character: 0 });
-        spaces = getSpaces(currLine, document);
-      } else {
-        // insert in next line
-        insertPosition = currPosition.translate(1).with({ character: 0 });
-        spaces = currLine.firstNonWhitespaceCharacterIndex;
-      }
-      editBuilder.insert(insertPosition, `${" ".repeat(spaces)}console.log("pog");\n`);
-    });
-    console.log(editor.selection.active);
+    const currPosition = editor.selection.active;
+    const currLine = document.lineAt(currPosition);
+    let insertPosition: vscode.Position;
+    let spaces: number;
+    let logText: string;
+    editor
+      .edit((editBuilder) => {
+        if (currLine.isEmptyOrWhitespace) {
+          // insert in current line
+          insertPosition = currPosition.with({ character: 0 });
+          spaces = getSpaces(currLine, document);
+          logText = `${" ".repeat(spaces)}console.log("pog");`;
+          editBuilder.replace(new vscode.Range(insertPosition, currPosition), logText);
+        } else {
+          // insert in next line
+          insertPosition = currPosition.translate(1).with({ character: 0 });
+          spaces = currLine.firstNonWhitespaceCharacterIndex;
+          logText = `${" ".repeat(spaces)}console.log("pog");\n`;
+          editBuilder.replace(insertPosition, logText);
+        }
+      })
+      .then(() => {
+        const endPosition = insertPosition.with({ character: logText.length });
+        editor.selection = new vscode.Selection(endPosition, endPosition);
+      });
   });
   context.subscriptions.push(logCommand);
 }
