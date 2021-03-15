@@ -1,8 +1,8 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 
-function getSpaces(currentLine: vscode.TextLine, document: vscode.TextDocument) {
+const patternArray = [/const (\w+) =/, /function (\w+)/, /class (\w_)/];
+
+function getSpacesForEmpty(currentLine: vscode.TextLine, document: vscode.TextDocument) {
   if (currentLine.lineNumber === 0) {
     return 0;
   }
@@ -18,24 +18,56 @@ function getSpaces(currentLine: vscode.TextLine, document: vscode.TextDocument) 
   return previousLine.firstNonWhitespaceCharacterIndex;
 }
 
+function getSpacesForNonEmpty(currentLine: vscode.TextLine) {
+  if (currentLine.text.charAt(currentLine.text.length - 1) === "{") {
+    return currentLine.firstNonWhitespaceCharacterIndex + 2;
+  }
+
+  return currentLine.firstNonWhitespaceCharacterIndex;
+}
+
+function checkIfMatch(lineContent: string) {
+  for (const pattern of patternArray) {
+    const res = pattern.exec(lineContent);
+    if (res) {
+      return res[1];
+    }
+  }
+
+  return null;
+}
+
+function getBlockName(currentLine: vscode.TextLine, document: vscode.TextDocument): string | null {
+  if (currentLine.lineNumber === 0) {
+    return null;
+  }
+
+  let bracketCount = 0;
+  let lineNumber = currentLine.lineNumber + 1;
+  let lineContent = currentLine.text;
+  while (bracketCount > -1 && lineNumber > 0) {
+    lineNumber -= 1;
+    lineContent = document.lineAt(lineNumber).text;
+    if (lineContent.includes("}")) {
+      bracketCount += 1;
+    }
+    if (lineContent.includes("{")) {
+      bracketCount -= 1;
+    }
+  }
+
+  const res = checkIfMatch(lineContent);
+  if (res) {
+    return res;
+  } else if (lineNumber > 0) {
+    return getBlockName(document.lineAt(lineNumber - 1), document);
+  }
+  return null;
+}
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  // Use the console to output diagnostic information (console.log) and errors (console.error)
-  // This line of code will only be executed once when your extension is activated
-  console.log('Congratulations, your extension "simple-console-log" is now active!');
-
-  // The command has been defined in the package.json file
-  // Now provide the implementation of the command with registerCommand
-  // The commandId parameter must match the command field in package.json
-  let disposable = vscode.commands.registerCommand("simple-console-log.helloWorld", () => {
-    // The code you place here will be executed every time your command is executed
-
-    // Display a message box to the user
-    vscode.window.showInformationMessage("Hello VSCode from simple-console-log!");
-  });
-  context.subscriptions.push(disposable);
-
   let logCommand = vscode.commands.registerCommand("simple-console-log.logHere", () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -43,25 +75,39 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const document = editor.document;
+    const splitDoc = document.fileName.split("/");
+    const fileName = splitDoc[splitDoc.length - 1];
     const currPosition = editor.selection.active;
     const currLine = document.lineAt(currPosition);
     let insertPosition: vscode.Position;
     let spaces: number;
+    let blockName: string | null;
     let logText: string;
     editor
       .edit((editBuilder) => {
         if (currLine.isEmptyOrWhitespace) {
-          // insert in current line
+          // insert at start of current line
           insertPosition = currPosition.with({ character: 0 });
-          spaces = getSpaces(currLine, document);
-          logText = `${" ".repeat(spaces)}console.log("pog");`;
-          editBuilder.replace(new vscode.Range(insertPosition, currPosition), logText);
+          spaces = getSpacesForEmpty(currLine, document);
+          blockName = getBlockName(currLine, document);
+          logText = `${" ".repeat(spaces)}console.log("🅱️ - ${fileName}${
+            blockName ? ` - ${blockName}` : ""
+          } - line ${currLine.lineNumber + 1}");`;
+          // delete any existing context on the line
+          editBuilder.delete(document.lineAt(currPosition.line).range);
+          // insert comment
+          editBuilder.insert(insertPosition, logText);
         } else {
-          // insert in next line
+          // insert at start of next line
           insertPosition = currPosition.translate(1).with({ character: 0 });
-          spaces = currLine.firstNonWhitespaceCharacterIndex;
-          logText = `${" ".repeat(spaces)}console.log("pog");\n`;
-          editBuilder.replace(insertPosition, logText);
+          spaces = getSpacesForNonEmpty(currLine);
+          blockName = getBlockName(currLine, document);
+          // add new line at end of message to push down any content of line below
+          logText = `${" ".repeat(spaces)}console.log("🅱️ - ${fileName}${
+            blockName ? ` - ${blockName}` : ""
+          } - line ${currLine.lineNumber + 2}");\n`;
+          // insert comment
+          editBuilder.insert(insertPosition, logText);
         }
       })
       .then(() => {
