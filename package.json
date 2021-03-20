@@ -3,7 +3,7 @@
   "displayName": "simple-console-log",
   "description": "For better console logging",
   "repository": "https://github.com/MFarejowicz/simple-console-log",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "publisher": "MFarejowicz",
   "engines": {
     "vscode": "^1.54.0"
