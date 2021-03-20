@@ -7,3 +7,7 @@ All notable changes to the "simple-console-log" extension will be documented in 
 ## 1.0.0
 
 - Initial release
+
+## 1.0.1
+
+Add icon?

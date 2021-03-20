@@ -25,3 +25,7 @@ None... yet.
 ### 1.0.0
 
 Version 1! The initial release
+
+### 1.0.1
+
+Add icon?
