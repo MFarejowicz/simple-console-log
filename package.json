@@ -2,6 +2,7 @@
   "name": "simple-console-log",
   "displayName": "simple-console-log",
   "description": "For better console logging",
+  "repository": "https://github.com/MFarejowicz/simple-console-log",
   "version": "0.0.1",
   "publisher": "MFarejowicz",
   "engines": {
